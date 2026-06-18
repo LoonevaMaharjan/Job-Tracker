@@ -35,3 +35,8 @@ export interface ApplicationsResponse {
   data: JobApplication[];
   pagination: Pagination;
 }
+
+export interface ApplicationStats {
+  total: number;
+  counts: Record<ApplicationStatus, number>;
+}

@@ -5,6 +5,7 @@ const {
   createApplication,
   deleteApplication,
   getApplication,
+  getApplicationStats,
   listApplications,
   updateApplication,
 } = require('./applicationsService');
@@ -19,6 +20,17 @@ router.get('/', async (req, res) => {
     res.status(err.statusCode || 500).json({
       error: err.statusCode ? err.message : 'Something went wrong fetching applications.',
     });
+  }
+});
+
+// GET /applications/stats - status counts with optional ?search=
+router.get('/stats', async (req, res) => {
+  try {
+    const stats = await getApplicationStats(req.query);
+    res.json(stats);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong fetching application stats.' });
   }
 });
 

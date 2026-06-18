@@ -1,4 +1,4 @@
-import type { ApiMode, ApplicationInput, ApplicationsResponse, JobApplication } from './types';
+import type { ApiMode, ApplicationInput, ApplicationStats, ApplicationsResponse, JobApplication } from './types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
@@ -7,6 +7,26 @@ interface ListParams {
   search: string;
   page: number;
   limit: number;
+}
+
+const EMPTY_COUNTS: ApplicationStats['counts'] = {
+  Applied: 0,
+  Interviewing: 0,
+  Offer: 0,
+  Rejected: 0,
+};
+
+function buildStats(applications: JobApplication[], total?: number): ApplicationStats {
+  const counts = { ...EMPTY_COUNTS };
+
+  applications.forEach((application) => {
+    counts[application.status] += 1;
+  });
+
+  return {
+    total: total ?? applications.length,
+    counts,
+  };
 }
 
 async function parseJson<T>(response: Response): Promise<T> {
@@ -72,6 +92,49 @@ export async function listApplications(mode: ApiMode, params: ListParams): Promi
 
   const response = await fetch(`${API_URL}/applications?${searchParams.toString()}`);
   return parseJson<ApplicationsResponse>(response);
+}
+
+export async function getApplicationStats(mode: ApiMode, search: string): Promise<ApplicationStats> {
+  if (mode === 'graphql') {
+    try {
+      const data = await graphql<{ applicationStats: ApplicationStats }>(
+        `query ApplicationStats($search: String) {
+          applicationStats(search: $search) {
+            total
+            counts
+          }
+        }`,
+        { search: search || undefined },
+      );
+      return data.applicationStats;
+    } catch {
+      const data = await graphql<{ applications: ApplicationsResponse }>(
+        `query Applications($search: String, $page: Int, $limit: Int) {
+          applications(search: $search, page: $page, limit: $limit) {
+            data { id company_name job_title job_type status applied_date notes }
+            pagination { page limit totalCount totalPages }
+          }
+        }`,
+        { search: search || undefined, page: 1, limit: 50 },
+      );
+      return buildStats(data.applications.data, data.applications.pagination.totalCount);
+    }
+  }
+
+  const searchParams = new URLSearchParams();
+  if (search.trim()) searchParams.set('search', search.trim());
+  const suffix = searchParams.toString() ? `?${searchParams.toString()}` : '';
+
+  try {
+    const response = await fetch(`${API_URL}/applications/stats${suffix}`);
+    return await parseJson<ApplicationStats>(response);
+  } catch {
+    const fallbackParams = new URLSearchParams({ page: '1', limit: '50' });
+    if (search.trim()) fallbackParams.set('search', search.trim());
+    const response = await fetch(`${API_URL}/applications?${fallbackParams.toString()}`);
+    const applications = await parseJson<ApplicationsResponse>(response);
+    return buildStats(applications.data, applications.pagination.totalCount);
+  }
 }
 
 export async function createApplication(mode: ApiMode, input: ApplicationInput): Promise<JobApplication> {

@@ -3,20 +3,28 @@ import type { ChangeEvent } from 'react';
 import {
   createApplication,
   deleteApplication,
+  getApplicationStats,
   listApplications,
   updateApplication,
 } from './api';
 import ApplicationList from './components/ApplicationList';
 import ApplicationForm from './components/ApplicationForm';
-import type { ApiMode, ApplicationInput, JobApplication, Pagination } from './types';
+import PipelineAnalytics from './components/PipelineAnalytics';
+import type { ApiMode, ApplicationInput, ApplicationStats, JobApplication, Pagination } from './types';
 import './App.css';
 
 const PAGE_SIZE = 5;
+const API_MODE: ApiMode = 'rest';
 const EMPTY_PAGINATION: Pagination = { page: 1, limit: PAGE_SIZE, totalCount: 0, totalPages: 1 };
+const EMPTY_STATS: ApplicationStats = {
+  total: 0,
+  counts: { Applied: 0, Interviewing: 0, Offer: 0, Rejected: 0 },
+};
 
 function App() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [pagination, setPagination] = useState<Pagination>(EMPTY_PAGINATION);
+  const [stats, setStats] = useState<ApplicationStats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +32,7 @@ function App() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const [apiMode, setApiMode] = useState<ApiMode>('rest');
+  const [reloadToken, setReloadToken] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editingApp, setEditingApp] = useState<JobApplication | null>(null);
   const [viewingApp, setViewingApp] = useState<JobApplication | null>(null);
@@ -41,10 +49,12 @@ function App() {
       setError(null);
 
       try {
-        const result = await listApplications(apiMode, query);
+        const result = await listApplications(API_MODE, query);
+        const nextStats = await getApplicationStats(API_MODE, searchTerm).catch(() => EMPTY_STATS);
         if (!controller.signal.aborted) {
           setApplications(result.data);
           setPagination(result.pagination);
+          setStats(nextStats);
         }
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -61,12 +71,19 @@ function App() {
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [apiMode, query, searchTerm]);
+  }, [query, reloadToken, searchTerm]);
 
   const refreshCurrentPage = async () => {
-    const result = await listApplications(apiMode, query);
+    const result = await listApplications(API_MODE, query);
+    const nextStats = await getApplicationStats(API_MODE, searchTerm).catch(() => EMPTY_STATS);
     setApplications(result.data);
     setPagination(result.pagination);
+    setStats(nextStats);
+  };
+
+  const refreshStats = async () => {
+    const nextStats = await getApplicationStats(API_MODE, searchTerm).catch(() => EMPTY_STATS);
+    setStats(nextStats);
   };
 
   const handleFormSubmit = async (formData: ApplicationInput) => {
@@ -80,8 +97,9 @@ function App() {
       setApplications((current) => current.map((app) => (app.id === editingApp.id ? optimisticUpdate : app)));
 
       try {
-        const saved = await updateApplication(apiMode, editingApp.id, formData);
+        const saved = await updateApplication(API_MODE, editingApp.id, formData);
         setApplications((current) => current.map((app) => (app.id === saved.id ? saved : app)));
+        await refreshStats();
         setNotice('Application updated.');
         setShowForm(false);
         setEditingApp(null);
@@ -99,9 +117,10 @@ function App() {
     setApplications((current) => [optimisticCreate, ...current].slice(0, PAGE_SIZE));
 
     try {
-      const saved = await createApplication(apiMode, formData);
+      const saved = await createApplication(API_MODE, formData);
       setApplications((current) => current.map((app) => (app.id === tempId ? saved : app)));
       setPagination((current) => ({ ...current, totalCount: current.totalCount + 1 }));
+      await refreshStats();
       setNotice('Application added.');
       setShowForm(false);
     } catch (err) {
@@ -123,7 +142,7 @@ function App() {
     setNotice('Application deleted.');
 
     try {
-      await deleteApplication(apiMode, app.id);
+      await deleteApplication(API_MODE, app.id);
       await refreshCurrentPage();
     } catch (err) {
       setApplications(previous);
@@ -144,16 +163,30 @@ function App() {
   };
 
   return (
-    <main className="app-shell">
+    <>
+    <nav className="top-nav" aria-label="Primary navigation">
+      <a className="brand-mark" href="#dashboard" aria-label="Job Application Tracker home">
+        JT
+      </a>
+      <div className="nav-links">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#applications">Applications</a>
+        <a href="#add">Add</a>
+      </div>
+    </nav>
+
+    <main className="app-shell" id="dashboard">
       <header className="app-header">
         <div>
           <h1>Job Application Tracker</h1>
-          <p>Track roles, move candidates through stages, and search your pipeline.</p>
+          <p>Track roles, compare outcomes, and keep your search moving.</p>
         </div>
-        <button type="button" onClick={() => { setEditingApp(null); setShowForm(true); }}>
+        <button id="add" type="button" onClick={() => { setEditingApp(null); setShowForm(true); }}>
           Add Application
         </button>
       </header>
+
+      <PipelineAnalytics stats={stats} loading={loading} />
 
       <section className="toolbar" aria-label="Filters">
         <label>
@@ -177,13 +210,6 @@ function App() {
           </select>
         </label>
 
-        <label>
-          API
-          <select value={apiMode} onChange={(event) => setApiMode(event.target.value as ApiMode)}>
-            <option value="rest">REST</option>
-            <option value="graphql">GraphQL</option>
-          </select>
-        </label>
       </section>
 
       {showForm && (
@@ -210,18 +236,36 @@ function App() {
         </section>
       )}
 
-      {loading && <div className="message loading">Loading applications...</div>}
-      {error && <div className="message error" role="alert">{error}</div>}
+      {loading && (
+        <div className="skeleton-list" aria-label="Loading applications">
+          <span />
+          <span />
+          <span />
+        </div>
+      )}
+      {error && (
+        <div className="message error" role="alert">
+          <div>
+            <strong>Could not load applications.</strong>
+            <p>{error}</p>
+          </div>
+          <button type="button" className="secondary" onClick={() => setReloadToken((token) => token + 1)}>
+            Retry
+          </button>
+        </div>
+      )}
       {notice && !error && <div className="message success">{notice}</div>}
 
       {!loading && !error && (
         <>
-          <ApplicationList
-            applications={applications}
-            onView={setViewingApp}
-            onEdit={(app) => { setEditingApp(app); setShowForm(true); }}
-            onDelete={handleDelete}
-          />
+          <section id="applications" aria-label="Applications">
+            <ApplicationList
+              applications={applications}
+              onView={setViewingApp}
+              onEdit={(app) => { setEditingApp(app); setShowForm(true); }}
+              onDelete={handleDelete}
+            />
+          </section>
 
           <nav className="pagination" aria-label="Pagination">
             <button type="button" className="secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
@@ -242,6 +286,7 @@ function App() {
         </>
       )}
     </main>
+    </>
   );
 }
 

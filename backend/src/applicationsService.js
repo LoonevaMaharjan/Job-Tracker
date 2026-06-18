@@ -62,6 +62,42 @@ async function listApplications(filters = {}) {
   };
 }
 
+async function getApplicationStats(filters = {}) {
+  const { search } = filters;
+  const conditions = [];
+  const values = [];
+
+  if (search && search.trim()) {
+    values.push(`%${search.trim()}%`);
+    conditions.push(`(company_name ILIKE $1 OR job_title ILIKE $1)`);
+  }
+
+  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const result = await pool.query(
+    `
+      SELECT status, COUNT(*)::int AS count
+      FROM applications
+      ${whereClause}
+      GROUP BY status
+    `,
+    values,
+  );
+
+  const counts = STATUSES.reduce((acc, status) => {
+    acc[status] = 0;
+    return acc;
+  }, {});
+
+  result.rows.forEach((row) => {
+    counts[row.status] = row.count;
+  });
+
+  return {
+    total: Object.values(counts).reduce((sum, count) => sum + count, 0),
+    counts,
+  };
+}
+
 async function getApplication(id) {
   const result = await pool.query('SELECT * FROM applications WHERE id = $1', [id]);
   return result.rows[0] || null;
@@ -119,6 +155,7 @@ module.exports = {
   createApplication,
   deleteApplication,
   getApplication,
+  getApplicationStats,
   listApplications,
   parsePagination,
   updateApplication,

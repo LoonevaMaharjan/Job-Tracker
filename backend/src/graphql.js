@@ -3,6 +3,7 @@ const {
   createApplication,
   deleteApplication,
   getApplication,
+  getApplicationStats,
   listApplications,
   updateApplication,
 } = require('./applicationsService');
@@ -35,6 +36,11 @@ router.post('/', async (req, res) => {
     if (query.includes('applications')) {
       const result = await listApplications(args);
       return res.json({ data: { applications: result } });
+    }
+
+    if (query.includes('applicationStats')) {
+      const result = await getApplicationStats(args);
+      return res.json({ data: { applicationStats: result } });
     }
 
     if (query.includes('application(')) {
