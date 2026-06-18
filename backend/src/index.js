@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const applicationsRouter = require('./routes');
+const graphqlRouter = require('./graphql');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -16,7 +17,12 @@ app.get('/health', (req, res) => {
 
 // All application-related routes live under /applications
 app.use('/applications', applicationsRouter);
+app.use('/graphql', graphqlRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

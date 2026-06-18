@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: job-tracker-api
+    runtime: docker
+    rootDir: backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: job-tracker-db
+          property: connectionString
+
+  - type: web
+    name: job-tracker-web
+    runtime: docker
+    rootDir: frontend
+    plan: free
+    dockerBuildArgs:
+      VITE_API_URL: https://job-tracker-api.onrender.com
+
+databases:
+  - name: job-tracker-db
+    plan: free
