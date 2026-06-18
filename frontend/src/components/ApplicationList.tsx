@@ -25,18 +25,24 @@ function ApplicationList({ applications, onView, onEdit, onDelete }: Application
             <th>Job Title</th>
             <th>Status</th>
             <th>Applied Date</th>
+            <th>Notes</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {applications.map((app) => (
             <tr key={app.id} className={app.optimistic ? 'is-pending' : undefined}>
-              <td>{app.company_name}</td>
+              <td>
+                <button type="button" className="company-link" onClick={() => onView(app)}>
+                  {app.company_name}
+                </button>
+              </td>
               <td>{app.job_title}</td>
               <td>
                 <span className={`status status-${app.status.toLowerCase()}`}>{app.status}</span>
               </td>
               <td>{formatDate(app.applied_date)}</td>
+              <td className="notes-cell">{app.notes || 'No notes'}</td>
               <td>
                 <div className="row-actions">
                   <button type="button" onClick={() => onView(app)}>View</button>

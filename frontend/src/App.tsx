@@ -73,6 +73,24 @@ function App() {
     };
   }, [query, reloadToken, searchTerm]);
 
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+
+      if (showForm) {
+        setShowForm(false);
+        setEditingApp(null);
+      }
+
+      if (viewingApp) {
+        setViewingApp(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showForm, viewingApp]);
+
   const refreshCurrentPage = async () => {
     const result = await listApplications(API_MODE, query);
     const nextStats = await getApplicationStats(API_MODE, searchTerm).catch(() => EMPTY_STATS);
@@ -171,7 +189,6 @@ function App() {
       <div className="nav-links">
         <a href="#dashboard">Dashboard</a>
         <a href="#applications">Applications</a>
-        <a href="#add">Add</a>
       </div>
     </nav>
 
@@ -213,27 +230,78 @@ function App() {
       </section>
 
       {showForm && (
-        <section className="form-panel">
-          <h2>{editingApp ? 'Edit Application' : 'Add Application'}</h2>
-          <ApplicationForm
-            key={editingApp?.id ?? 'new'}
-            initialData={editingApp}
-            saving={saving}
-            onSubmit={handleFormSubmit}
-            onCancel={() => { setShowForm(false); setEditingApp(null); }}
-          />
-        </section>
+        <div className="modal-backdrop" role="presentation">
+          <section
+            className="form-panel modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="application-form-title"
+          >
+            <div className="modal-header">
+              <h2 id="application-form-title">{editingApp ? 'Edit Application' : 'Add Application'}</h2>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Close application form"
+                onClick={() => { setShowForm(false); setEditingApp(null); }}
+              >
+                x
+              </button>
+            </div>
+            <ApplicationForm
+              key={editingApp?.id ?? 'new'}
+              initialData={editingApp}
+              saving={saving}
+              onSubmit={handleFormSubmit}
+              onCancel={() => { setShowForm(false); setEditingApp(null); }}
+            />
+          </section>
+        </div>
       )}
 
       {viewingApp && (
-        <section className="detail-panel">
-          <div>
-            <h2>{viewingApp.company_name}</h2>
-            <p>{viewingApp.job_title} · {viewingApp.status}</p>
-            <p>{viewingApp.notes || 'No notes yet.'}</p>
-          </div>
-          <button type="button" className="secondary" onClick={() => setViewingApp(null)}>Close</button>
-        </section>
+        <div className="modal-backdrop" role="presentation">
+          <section
+            className="detail-panel modal-panel detail-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="application-detail-title"
+          >
+            <div className="modal-header">
+              <div>
+                <h2 id="application-detail-title">{viewingApp.company_name}</h2>
+                <p>{viewingApp.job_title}</p>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Close application details"
+                onClick={() => setViewingApp(null)}
+              >
+                x
+              </button>
+            </div>
+
+            <dl className="detail-grid">
+              <div>
+                <dt>Status</dt>
+                <dd><span className={`status status-${viewingApp.status.toLowerCase()}`}>{viewingApp.status}</span></dd>
+              </div>
+              <div>
+                <dt>Job Type</dt>
+                <dd>{viewingApp.job_type}</dd>
+              </div>
+              <div>
+                <dt>Applied Date</dt>
+                <dd>{viewingApp.applied_date ? viewingApp.applied_date.slice(0, 10) : 'Not set'}</dd>
+              </div>
+              <div>
+                <dt>Notes</dt>
+                <dd>{viewingApp.notes || 'No notes yet.'}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
       )}
 
       {loading && (
