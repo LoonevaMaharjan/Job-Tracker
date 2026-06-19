@@ -50,11 +50,9 @@ function App() {
 
       try {
         const result = await listApplications(API_MODE, query);
-        const nextStats = await getApplicationStats(API_MODE, searchTerm).catch(() => EMPTY_STATS);
         if (!controller.signal.aborted) {
           setApplications(result.data);
           setPagination(result.pagination);
-          setStats(nextStats);
         }
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -72,6 +70,12 @@ function App() {
       window.clearTimeout(timer);
     };
   }, [query, reloadToken, searchTerm]);
+
+  useEffect(() => {
+    getApplicationStats(API_MODE, '')
+      .then(setStats)
+      .catch(() => setStats(EMPTY_STATS));
+  }, [reloadToken]);
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -93,14 +97,14 @@ function App() {
 
   const refreshCurrentPage = async () => {
     const result = await listApplications(API_MODE, query);
-    const nextStats = await getApplicationStats(API_MODE, searchTerm).catch(() => EMPTY_STATS);
+    const nextStats = await getApplicationStats(API_MODE, '').catch(() => EMPTY_STATS);
     setApplications(result.data);
     setPagination(result.pagination);
     setStats(nextStats);
   };
 
   const refreshStats = async () => {
-    const nextStats = await getApplicationStats(API_MODE, searchTerm).catch(() => EMPTY_STATS);
+    const nextStats = await getApplicationStats(API_MODE, '').catch(() => EMPTY_STATS);
     setStats(nextStats);
   };
 
