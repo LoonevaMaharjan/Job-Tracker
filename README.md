@@ -211,35 +211,35 @@ Example variables:
 
 ## Screenshots / Demo
 
-Dashboard (Graphs & Analytics)
+**Dashboard (Graphs & Analytics)**
 
 ![Dashboard](docs/screenshots/Dashboard.png)
 
 In Dashboard, a visual dashboard with charts representing the status of job applications, helping users quickly understand their application progress.
 
 
-Add Application Popup
+**Add Application Popup**
 
 ![Add Application Popup](docs/screenshots/add-application.png)
 
 A modal form that allows users to add new job applications with details like company name, job title, status, and notes.
 
 
-Navigation Bar  
+**Navigation Bar  **
 
 ![Navigation Bar](docs/screenshots/Navigation.png)
 
 A clean navigation bar with routes to Dashboard and Applications pages for easy and smooth navigation across the app.
 
 
-Search & Filter
+**Search & Filter**
 
 ![Search and Filter](docs/screenshots/Search-Filter.png)
 
 Allows users to search applications by company or job title and filter them based on application status for quick access.
 
 
-Edit, View & Delete Actions
+**Edit, View & Delete Actions**
 
 ![Edit](docs/screenshots/EditAction.png)
 ![View](docs/screenshots/ViewAction.png)
@@ -248,14 +248,14 @@ Edit, View & Delete Actions
 Each application includes action buttons to view, edit, or delete entries from the list.
 
 
-Pagination
+**Pagination**
 
 ![Pagination](docs/screenshots/Pagination.png)
 
 Handles large datasets by splitting applications into pages for better navigation and performance.
 
 
-Error Messages / Empty States
+**Error Messages / Empty States**
 
 ![Error State](docs/screenshots/error-message.png)
 
