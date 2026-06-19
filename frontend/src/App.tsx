@@ -36,6 +36,7 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [editingApp, setEditingApp] = useState<JobApplication | null>(null);
   const [viewingApp, setViewingApp] = useState<JobApplication | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<JobApplication | null>(null);
 
   const query = useMemo(
     () => ({ status: statusFilter, search: searchTerm, page, limit: PAGE_SIZE }),
@@ -89,11 +90,15 @@ function App() {
       if (viewingApp) {
         setViewingApp(null);
       }
+
+      if (deleteTarget) {
+        setDeleteTarget(null);
+      }
     };
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [showForm, viewingApp]);
+  }, [deleteTarget, showForm, viewingApp]);
 
   const refreshCurrentPage = async () => {
     const result = await listApplications(API_MODE, query);
@@ -153,11 +158,11 @@ function App() {
     }
   };
 
-  const handleDelete = async (app: JobApplication) => {
-    const confirmed = window.confirm(`Delete the application for ${app.company_name}?`);
-    if (!confirmed) return;
-
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const app = deleteTarget;
     const previous = applications;
+    setDeleteTarget(null);
     setApplications((current) => current.filter((item) => item.id !== app.id));
     setPagination((current) => ({ ...current, totalCount: Math.max(0, current.totalCount - 1) }));
     setError(null);
@@ -308,6 +313,33 @@ function App() {
         </div>
       )}
 
+      {deleteTarget && (
+        <div className="modal-backdrop" role="presentation">
+          <section
+            className="alert-panel"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-alert-title"
+            aria-describedby="delete-alert-description"
+          >
+            <div>
+              <h2 id="delete-alert-title">Delete application?</h2>
+              <p id="delete-alert-description">
+                This will permanently remove the application for {deleteTarget.company_name}.
+              </p>
+            </div>
+            <div className="alert-actions">
+              <button type="button" className="secondary" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </button>
+              <button type="button" className="danger" onClick={confirmDelete}>
+                Delete
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+
       {loading && (
         <div className="skeleton-list" aria-label="Loading applications">
           <span />
@@ -335,7 +367,7 @@ function App() {
               applications={applications}
               onView={setViewingApp}
               onEdit={(app) => { setEditingApp(app); setShowForm(true); }}
-              onDelete={handleDelete}
+              onDelete={setDeleteTarget}
             />
           </section>
 

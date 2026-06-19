@@ -211,22 +211,55 @@ Example variables:
 
 ## Screenshots / Demo
 
-Add screenshots or a short demo video here before submission.
+Dashboard (Graphs & Analytics)
 
-Suggested screenshots:
+![Dashboard](docs/screenshots/Dashboard.png)
 
-- Dashboard graph
-- Application table with notes
-- Add application popup
-- Application details popup
+In Dashboard, a visual dashboard with charts representing the status of job applications, helping users quickly understand their application progress.
 
-Suggested paths:
 
-```txt
-docs/screenshots/dashboard.png
-docs/screenshots/application-form.png
-docs/screenshots/application-details.png
-```
+Add Application Popup
+
+![Add Application Popup](docs/screenshots/add-application.png)
+
+A modal form that allows users to add new job applications with details like company name, job title, status, and notes.
+
+
+Navigation Bar  
+
+![Navigation Bar](docs/screenshots/Navigation.png)
+
+A clean navigation bar with routes to Dashboard and Applications pages for easy and smooth navigation across the app.
+
+
+Search & Filter
+
+![Search and Filter](docs/screenshots/Search-Filter.png)
+
+Allows users to search applications by company or job title and filter them based on application status for quick access.
+
+
+Edit, View & Delete Actions
+
+![Edit](docs/screenshots/EditAction.png)
+![View](docs/screenshots/ViewAction.png)
+![Delete](docs/screenshots/DeleteAction.png)
+
+Each application includes action buttons to view, edit, or delete entries from the list.
+
+
+Pagination
+
+![Pagination](docs/screenshots/Pagination.png)
+
+Handles large datasets by splitting applications into pages for better navigation and performance.
+
+
+Error Messages / Empty States
+
+![Error State](docs/screenshots/error-message.png)
+
+Displays meaningful error messages or empty state UI when data fails to load or no applications are available.
 
 ## Deployment
 

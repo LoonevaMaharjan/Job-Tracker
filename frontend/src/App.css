@@ -408,6 +408,32 @@ button.danger:hover:not(:disabled) {
   display: block;
 }
 
+.alert-panel {
+  width: min(420px, 100%);
+  border: 1px solid #f2c7c2;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 22px;
+}
+
+.alert-panel h2 {
+  margin: 0 0 8px;
+  color: #7f1d14;
+  font-size: 22px;
+}
+
+.alert-panel p {
+  margin: 0;
+  color: #5f6472;
+}
+
+.alert-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
 .field-error {
   color: #b42318;
   font-size: 13px;
