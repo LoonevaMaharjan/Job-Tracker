@@ -225,7 +225,7 @@ In Dashboard, a visual dashboard with charts representing the status of job appl
 A modal form that allows users to add new job applications with details like company name, job title, status, and notes.
 
 
-**Navigation Bar  **
+**Navigation Bar**
 
 ![Navigation Bar](docs/screenshots/Navigation.png)
 
